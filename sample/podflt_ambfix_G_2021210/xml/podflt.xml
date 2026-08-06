@@ -1,0 +1,184 @@
+<config app="gnss_pod">
+    <gen>
+        <beg> 2021-07-29 00:00:00 </beg>
+        <end> 2021-07-31 24:00:00 </end> 
+        <sys> GPS </sys>
+		
+        <rec proc_int="30">  hers nklg nya2 ons1 jctw orid kiru mbar 
+nico syog mal2 djig aruc abpo cztg sey2 reun ural 
+maw1 kit3 krgg dgar bik0 iisc dav1 lhaz cpnm badg 
+bako jog2 cas1 hksl pert ptgg daej gamg darw cedu 
+dumg guam mobs tow2 pngm mcil mac1 kouc arht ous2 
+maju laut ftna owmg tong ckis kokv gcgo gamb chwk 
+jplm yell amc4 mdo1 flin glps kuj2 gods scub bogt 
+areg sant thu2 rgdg sch2 unb3 cro1 palm kour stj3 
+poal bele qaq1 enao cpvg reyk mas1 hofn ascg roag 
+ </rec> 
+        <int> 30 </int> 
+    <rec mode="D" type="leo" proc_int="30">  </rec>
+        </gen>
+
+	<bds sigma_C="5.0" sigma_L="0.01" >
+		<sat>
+			C06  C07  C08  C09  C10  C13  C16  
+			C11  C12  C14  C19  C20  C21  C22  C23  C24  C25  
+			C26  C27  C28  C29  C30  C32  C33  C34  C35  C36  C37
+			
+		</sat>
+		<freq> 1 2 </freq>
+		<band> 2 6 </band>
+	</bds>
+	<gps sigma_C="2.0" sigma_L="0.01" > 
+		<sat> 
+			G01  G02  G03  G05  G06  G07  G08  G09  G10  G12  
+			G13  G15  G16  G17  G19  G20  G21  G22  G24  G25  
+			G26  G27  G28  G29  G30  G31  G32
+		</sat>
+		<freq> 1 2 </freq>
+		<band> 1 2 </band>   
+	</gps>
+	<gal sigma_C="2.0" sigma_L="0.01" >
+		<sat>
+			E01  E02  E03  E04  E05  E07  E08  E09  E10  E11  
+			E12  E13  E14  E15  E18  E19  E20  E21  E22  E24  
+			E25  E26  E27  E30  E31  E33  E34  E36
+		</sat>
+		<freq> 1 2 </freq>
+		<band> 1 5 </band>
+	</gal>
+	<glo sigma_C="5.0"	 sigma_L="0.01" >
+		<sat>
+			R01  R02  R03  R04  R05  R06  R07  R08  R09  R10  
+			R11  R12  R13  R14  R15  R16  R17  R18  R19  R20  
+			R21  R22  R23  R24  R26
+		</sat>
+		<freq> 1 2 </freq>
+		<band> 1 2 </band>
+	</glo>
+
+    <parameters>
+        <STA ID="XXXX" sigCLK="9000" sigPOS="0.1_0.1_0.1" sigZTD="0.201" />
+        <SAT ID="XXX" sigCLK="9000" />
+		
+		<ERP sigXPOLE="0.000001" sigYPOLE="0.000001" sigDXPOLE="0.0000001" sigDYPOLE="0.0000001" sigUT1="0.0000001" sigDUT1="0.000001" />
+    </parameters>
+
+    <process grad_mf="chh"    gradient="false"   phase="true" tropo="ture" tropo_mf="gmf" tropo_model="saastamoinen"  frequency="2" slip_model="turboedit" 
+			 ion_model="SION" simulation="false" lsq_buffer_size="2000" ambfix="true" obs_weight="PARTELE" minimum_elev="7" sysbias_model="AUTO+RWK"
+			 crd_constr="FIX" sig_init_crd="100" sig_init_ztd="0.1" ref_clk="AREG" sig_ref_clk="1" max_res_norm="1.5"  num_threads="8"  > 
+	<read_ofile_mode obs_dir="/home/iGMAS/gnss_data/obs/-YYYY-/-DDD-/-SITE--DDD-0.-YY-o"> REALTIME </read_ofile_mode></process>
+
+	<turboedit >
+		<amb_output valid="true" />
+		<ephemeris valid="true" />
+		<check_pc pc_limit="250" valid="true" />
+		<check_mw mw_limit="4" valid="true" />
+		<check_gf gf_limit="0.15" gf_rms_limit="2" valid="true" />
+		<check_sf sf_limit="1" valid="false" />
+		<check_gap gap_limit="20" valid="true" />
+		<check_short short_limit="10" valid="true" />
+		<smooth_win value="25" />
+		<check_statistics max_mean_namb="3" min_mean_nprn="4" min_percent="60" valid="true" />
+	</turboedit>
+
+	<force_model>
+		<spacecraft ID="GNS">
+			<integrator order="11" step_in="30" step_out="30" rt_update_interval="43200" init_time="3600" />
+			<gravity model="EGM08_12" valid="True" />
+			<relativity model="Default" valid="True" />
+			<point_mass model="Default" valid="True" />
+			<solar_radiation model="ECOM2" valid="True" />
+			<antenna_thrust model="Default" valid="False" />
+			<rt_update_noise pv="1.0E-12" srp="1.0E-8" />
+			<eclipse_ratio> 4.0 </eclipse_ratio>
+			<maneuver_inflate pv="1.0E-8" srp="1.0" />
+		</spacecraft>
+		<spacecraft ID="GPS">
+			<integrator order="11" step_in="30" step_out="30" rt_update_interval="43200" init_time="3600" />
+			<gravity model="EIGEN6S4_12" valid="True">
+				<ocean_tide degree="30" model="FES" />
+			</gravity>
+			<relativity model="Default" valid="True" />
+			<point_mass model="Default" valid="True" />
+			<solar_radiation model="ECOM2" valid="True" />
+			<antenna_thrust model="Default" valid="True" />
+			<rt_update_noise pv="1.0E-12" srp="1.0E-8" />
+			<eclipse_ratio> 4.0 </eclipse_ratio>
+			<maneuver_inflate pv="1.0E-8" srp="1.0" />
+		</spacecraft>
+		<spacecraft ID="GAL">
+			<integrator order="11" step_in="30" step_out="30" rt_update_interval="43200" init_time="3600" />
+			<gravity model="EIGEN6S4_12" valid="True">
+				<ocean_tide degree="30" model="FES" />
+			</gravity>
+			<relativity model="Default" valid="True" />
+			<point_mass model="Default" valid="True" />
+			<solar_radiation model="ECOM2" valid="True"/>
+			<antenna_thrust model="Default" valid="True" />
+			<rt_update_noise pv="1.0E-12" srp="1.0E-8" />
+			<eclipse_ratio> 4.0 </eclipse_ratio>
+			<maneuver_inflate pv="1.0E-8" srp="1.0" />
+		</spacecraft>
+		<spacecraft ID="BDS">
+			<integrator order="11" step_in="30" step_out="30" rt_update_interval="43200" init_time="3600" />
+			<gravity model="EIGEN6S4_12" valid="True">
+				<ocean_tide degree="30" model="FES" />
+			</gravity>
+			<relativity model="Default" valid="True" />
+			<point_mass model="Default" valid="True" />
+			<solar_radiation model="ECOM2" valid="True" />
+			<antenna_thrust model="Default" valid="True" />
+			<rt_update_noise pv="1.0E-12" srp="1.0E-8" />
+			<maneuver_inflate pv="1.0E-8" srp="1.0" />
+			<eclipse_ratio> 4.0 </eclipse_ratio>
+		</spacecraft>
+		<spacecraft ID="GLO">
+			<integrator order="11" step_in="30" step_out="30" rt_update_interval="43200" init_time="3600" />
+			<gravity model="EIGEN6S4_12" valid="True">
+				<ocean_tide degree="30" model="FES" />
+			</gravity>
+			<relativity model="Default" valid="True" />
+			<point_mass model="Default" valid="True" />
+			<solar_radiation model="ECOM2" valid="True" />
+			<antenna_thrust model="Default" valid="True" />
+			<rt_update_noise pv="1.0E-12" srp="1.0E-8" />
+			<eclipse_ratio> 4.0 </eclipse_ratio>
+			<maneuver_inflate pv="1.0E-8" srp="1.0" />
+		</spacecraft>
+	</force_model>
+
+	<ambiguity>
+		<dd_mode> IF_CB_WN </dd_mode>
+		<min_common_time> 900 </min_common_time>
+		<widelane_interval> 30 </widelane_interval>
+		<baseline_length_limit> 3500 </baseline_length_limit>
+		<widelane_decision alpha="1000" maxdev="0.25" maxsig="0.15" />
+		<narrowlane_decision alpha="1000" maxdev="0.15" maxsig="0.33" />
+		<fix_dd_mode> IND </fix_dd_mode></ambiguity>
+
+    <outputs append="false" verb="0">
+		<log> /<install_dir>/GREAT_PODFLT/sample/podflt_ambfix_G_2021210/logger/LOGRT.log </log>
+        <orb> /<install_dir>/GREAT_PODFLT/sample/podflt_ambfix_G_2021210/result/orb_2021210 </orb>
+    	<sp3> /<install_dir>/GREAT_PODFLT/sample/podflt_ambfix_G_2021210/result/GRT0MGXRAP_20212100000_01D_05M_ORB.SP3 </sp3></outputs>
+
+	<inputs>
+        <jpl> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/jpleph_de405 </jpl>        
+        <sat> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/satinfo</sat>        
+        <atx> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/igs20.atx </atx>        
+        <rec> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/RECEIVER.txt </rec>        
+        <egm> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/EIGEN6S4 </egm>        
+        <lep> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/leap_seconds </lep>        
+        <otd> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/ocean_tide_FES2004 </otd>        
+        <blq> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/oceanload </blq>        
+        <erp> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/erp_2021_2024 </erp>        
+		<desaiscopolecoef> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/desaiscopolecoef </desaiscopolecoef>
+		<solar> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/solar_flux_MSISE_great_new</solar>
+		<solar> /<install_dir>/GREAT_PODFLT/utils/gnss_sys_file/geomag_ap_great_new</solar>
+		<rnn> /home/iGMAS/gnss_data/nav/-YYYY-/-DDD-/brdm-DDD-0.-YY-p </rnn>
+		<rno> /home/iGMAS/gnss_data/obs/-YYYY-/-DDD-/-SITE--DDD-0.-YY-o </rno>
+        <snx> /home/iGMAS/gnss_data/snx/2021/igs21P2168.snx   /home/iGMAS/gnss_data/snx/2021/igs21P2169.snx </snx>
+        <dcb> /home/iGMAS/gnss_data/dcb/2021/07/P1C12107.DCB  /home/iGMAS/gnss_data/dcb/2021/07/P1P22107.DCB /home/iGMAS/gnss_data/dcb/2021/07/P2C22107.DCB 
+			  /home/iGMAS/gnss_data/dcb/2021/08/P1C12108.DCB  /home/iGMAS/gnss_data/dcb/2021/08/P1P22108.DCB /home/iGMAS/gnss_data/dcb/2021/08/P2C22108.DCB </dcb>
+	</inputs>
+
+</config>

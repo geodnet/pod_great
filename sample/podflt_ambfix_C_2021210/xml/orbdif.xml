@@ -1,0 +1,82 @@
+<config app="gnss_pod">
+    <gen>
+        <beg> 2021-07-30 00:00:00 </beg>
+        <end> 2021-07-31 24:00:00 </end> 
+        <sys> BDS </sys>
+        <int> 300 </int>
+    </gen>
+
+	<bds sigma_C="5.0" sigma_C_LEO="5.0" sigma_L="0.01" sigma_L_LEO="0.01">
+		<sat>
+			
+			C01 C02 C03 C04 C05 C59 C60 C61
+			
+			C06  C07  C08  C09  C10  C13  C16  C31  C38  
+			C39  C40  C56
+			
+			C11  C12  C14  C19  C20  C21  C22  C23  C24  C25  
+			C26  C27  C28  C29  C30  C32  C33  C34  C35  C36  
+			C37  C41  C42  C43  C44  C45  C46 C57 C58
+		</sat>
+		<freq> 1 2 </freq>
+		<band> 2 6 </band>
+	</bds>
+	<gps sigma_C="2.0" sigma_C_LEO="2.0" sigma_L="0.01" sigma_L_LEO="0.01"> 
+		<sat> 
+			
+			G04  G11  G14  G18  G23 
+			
+			G01  G02  G03  G05  G06  G07  G08  G09  G10  G12  
+			G13  G15  G16  G17  G19  G20  G21  G22  G24  G25  
+			G26  G27  G28  G29  G30  G31  G32
+		</sat>
+		<freq> 1 2 </freq>
+		<band> 1 2 </band>   
+	</gps>
+	<gal sigma_C="2.0" sigma_C_LEO="2.0" sigma_L="0.01" sigma_L_LEO="0.01">
+		<sat>
+			E01  E02  E03  E04  E05  E07  E08  E09  E10  E11  
+			E12  E13  E14  E15  E18  E19  E20  E21  E22  E24  
+			E25  E26  E27  E30  E31  E33  E34  E36
+		</sat>
+		<freq> 1 2 </freq>
+		<band> 1 5 </band>
+	</gal>
+	<glo sigma_C="5.0" sigma_C_LEO="5.0" sigma_L="0.01" sigma_L_LEO="0.01">
+		<sat>
+			R01  R02  R03  R04  R05  R06  R07  R08  R09  R10  
+			R11  R12  R13  R14  R15  R16  R17  R18  R19  R20  
+			R21  R22  R23  R24  R26
+		</sat>
+		<freq> 1 2 </freq>
+		<band> 1 2 </band>
+	</glo>
+	<leo>
+		<sat>
+			sentinel-6a sentinel-3a sentinel-3b swarm-a swarm-b swarm-c grace-c grace-d
+		</sat>
+	</leo>
+	
+    <orbdif>
+	    <excsat> G04 G14 G18 C01 C02 C03 C04 C05 C06 C07 C08 C09 C10 C13 C16 C38 C39 C40 C41 C42 C43 C44 C45 C46 C47 </excsat>
+	    <excsys> QZS </excsys>
+	    <trans>  </trans>
+    	<estimate_beg> 2021-07-30 00:00:00 </estimate_beg>
+		<rm_limit>  </rm_limit>
+		<nav_sp3_diff> false </nav_sp3_diff>
+		<compare_vel> false </compare_vel>
+	</orbdif>
+
+    <inputs>
+		<erp> E:\GREAT\GREAT_GNSS_FLT_Sample\gnss_sys_file\erp_2021_2024 </erp>     
+        <sp3> E:\GREAT\GREAT_GNSS_FLT_Sample\gnssdata\sp3\2021\209\cod21683.sp3 E:\GREAT\GREAT_GNSS_FLT_Sample\gnssdata\sp3\2021\210\cod21684.sp3 E:\GREAT\GREAT_GNSS_FLT_Sample\gnssdata\sp3\2021\211\cod21685.sp3 
+			  E:\GREAT\GREAT_GNSS_FLT_Sample\gnssdata\sp3\2021\212\cod21686.sp3 E:\GREAT\GREAT_GNSS_FLT_Sample\gnssdata\sp3\2021\213\cod21690.sp3  </sp3>
+        <orb> F:\great\sample\server\podflt_ambfix_C_2021210\result\orb_2021210 </orb>
+	</inputs>
+
+    <outputs append="false" verb="0">
+        <log> F:\great\sample\server\podflt_ambfix_C_2021210\logger\LOGRT.log </log>
+        <dif> F:\great\sample\server\podflt_ambfix_C_2021210\result\orbdif_2021210_CRT_convergence_2day </dif>
+    </outputs>
+
+</config>
