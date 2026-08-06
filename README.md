@@ -16,7 +16,7 @@ This open-sourced GREAT-PODFLT version 1.0 supports the following capabilities:
 
 3. Supports dual-frequency ionosphere-free combination observations for both pseudorange and carrier phase measurements
 
-4. Supports comprehensive perturbation force models including non-spherical gravitation, N-body perturbation, solid Earth and ocean tides, ECOM2 solar radiation pressure, Earth albedo radiation, and antenna thrust
+4. Supports comprehensive perturbation force models including non-spherical gravitation, N-body perturbation, solid Earth and ocean tides, ECOM2 solar radiation pressure,and antenna thrust
 
 5. Includes the orbit comparison tool (orbdif) for accuracy assessment, outputting orbit residuals in ACR (Along-track / Cross-track / Radial) coordinates against reference precise ephemerides
 
