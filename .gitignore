@@ -1,0 +1,18 @@
+# build trees
+build*/
+# editor / IDE local files
+.vscode/
+# private run data: station IDs, coordinates, alias maps, credentials (keep outside the repo; these are a safety net)
+*.local.*
+alias_map*.csv
+sites*.snx
+stations*.csv
+work/
+out/
+run_*/
+clk_*_epo
+orb_state
+*.bia
+*.log
+.DS_Store
+__pycache__/

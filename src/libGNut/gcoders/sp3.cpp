@@ -62,22 +62,16 @@ int t_sp3::decode_head(char* buff, int sz, vector<string>& errmsg)
 		{
 			// first line
 			if (tmp.substr(1, 1) == "a" ||  // 60-columns
-				tmp.substr(1, 1) == "c"     // 80-columns
+				tmp.substr(1, 1) == "c" ||  // 80-columns
+				tmp.substr(1, 1) == "d"     // 80-columns SP3-d
 				) {
 
 				_version = tmp.substr(1, 1);
 				_start.from_str("%Y %m %d  %H %M %S", tmp.substr(3, 30));
 				_nepochs = str2int(tmp.substr(32, 7));
-				_orbrefs = tmp.substr(46, 5);
-				_orbtype = tmp.substr(52, 3);
-				if (tmp.size() > 60)
-				{
-					_agency = tmp.substr(56, 4);
-				}
-				else
-				{
-					_agency = "";
-				}
+				_orbrefs = (tmp.size() >= 51) ? tmp.substr(46, 5) : "";
+				_orbtype = (tmp.size() >= 55) ? tmp.substr(52, 3) : "";
+				_agency  = (tmp.size() >= 60) ? tmp.substr(56, 4) : "";
 				// second line
 			}
 			else if (tmp.substr(1, 1) == "#") {

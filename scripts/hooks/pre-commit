@@ -1,0 +1,36 @@
+#!/bin/sh
+# Refuse commits that look like they carry private GEODNET data (public repository).
+# install: ln -s ../../scripts/hooks/pre-commit .git/hooks/pre-commit
+#   - 12-hex-digit GEODNET station IDs
+#   - ECEF coordinates (signed 7-digit metres with decimals, as in station lists / SINEX)
+#   - credentials (password=, token=, user:pass@ in URLs)
+#   - local home paths (/Users/..., /home/...)
+#   - internal project/product identifiers or Co-authored-by trailers
+files=$(git diff --cached --name-only --diff-filter=ACM | grep -v -E '^(third-party|utils/gnss_sys_file|sample|doc)/')
+[ -z "$files" ] && exit 0
+bad=0
+for f in $files; do
+  [ -f "$f" ] || continue
+  [ "$f" = "scripts/hooks/pre-commit" ] && continue
+  if ! git diff --cached -U0 -- "$f" | python3 -c '
+import re, sys
+pat_hex = re.compile(r"(?<![.0-9A-Fa-f])(?![0-9]+e[+-]?[0-9]+\b)[0-9A-Fa-f]{12}(?![0-9A-Fa-f])")
+pat_other = re.compile(
+    r"[-+ ][1-6][0-9]{6}\.[0-9]{2,}|"
+    r"(password|passwd|token|secret)[ \t]*[=:]|"
+    r"://[^/ \t]+:[^/@ \t]+@|"
+    r"/Users/[^/ \t]+|/home/[^/ \t]+|"
+    r"pod_graph|\bGDN0[A-Z0-9]{5}\b|Co-authored-by:",
+    re.I,
+)
+for ln in sys.stdin:
+    if not ln.startswith("+") or ln.startswith("+++"):
+        continue
+    text = ln[1:]
+    if pat_hex.search(text) or pat_other.search(text):
+        sys.exit(1)
+'; then
+    echo "pre-commit: possible private data or internal identifier in $f"; bad=1
+  fi
+done
+[ $bad -eq 0 ] || { echo "commit refused; move the data outside the repo (or git commit --no-verify if it is a false positive)"; exit 1; }

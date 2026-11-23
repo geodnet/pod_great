@@ -62,19 +62,21 @@ namespace great
 		{
 			const char* blockc = block.c_str();
 			if (strcmp(blockc, "BLOCKIIF") == 0) { antennapower = 240.0; }
-			else if (strcmp(blockc, "BLOCKIIIA") == 0) { antennapower = 300.0; }
+			else if (strcmp(blockc, "BLOCKIIIA") == 0 || strcmp(blockc, "BLOCKIIIF") == 0) { antennapower = 300.0; }
 			else if (strcmp(blockc, "BLOCKIIR-B") == 0 || strcmp(blockc, "BLOCKIIR-A") == 0) { antennapower = 60.0; }
 			else if (strcmp(blockc, "BLOCKIIR-M") == 0) { antennapower = 145.0; }
 			else if (strcmp(blockc, "GLONASS-M") == 0) { antennapower = 50.0; }
-			else if (strcmp(blockc, "GLONASS-K1") == 0) { antennapower = 120.0; }
+			else if (strcmp(blockc, "GLONASS-K1") == 0 || strcmp(blockc, "GLONASS-K2") == 0) { antennapower = 120.0; }
 			else if (strcmp(blockc, "BEIDOU-2M") == 0) { antennapower = 130.0; }
 			else if (strcmp(blockc, "BEIDOU-2I") == 0) { antennapower = 185.0; }
+			else if (strcmp(blockc, "GALILEO-1") == 0) { antennapower = 135.0; }
 			else if (strcmp(blockc, "GALILEO-2") == 0) { antennapower = 265.0; }
 			else if (strcmp(blockc, "BEIDOU-3M-CAST") == 0) { antennapower = 310.0; }
 			else if (strcmp(blockc, "BEIDOU-3M-SECM") == 0) { antennapower = 280.0; }
 			else
 			{
-				write_log(_glog, 4, function_name, "ERROR : invalid satellite type");
+				antennapower = 0.0;
+				write_log(_glog, 4, function_name, "WARN : unknown satellite block for antenna thrust: " + block);
 				return false;
 			}
 			return true;
@@ -106,7 +108,12 @@ namespace great
 			ColumnVector radvec(0.0, 3);
 			_mass = (arg->sat_mass);
 			blockname = arg->sat_blocknum;
-			getTransmitPower(blockname);
+			if (arg->sat_power > 0.0) {
+				antennapower = arg->sat_power;
+			}
+			else {
+				getTransmitPower(blockname);
+			}
 			double abspos = sqrt(ysat[0] * ysat[0] + ysat[1] * ysat[1] + ysat[2] * ysat[2]);
 			for (int num = 0; num < 3; num++)
 			{

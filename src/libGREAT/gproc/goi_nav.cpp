@@ -804,9 +804,24 @@ namespace great
 		t_adams* adams = NULL;
 		try
 		{
+			if (_step_inp <= 0 || _step_out <= 0)
+			{
+				writeLogInfo(_glog, 0, function_name, "ERROR : invalid integrator step_in/step_out settings");
+				return false;
+			}
+			int step_inp = _step_inp;
+			if (_step_out < step_inp || _step_out % step_inp != 0)
+			{
+				// Keep the Adams step a divisor of step_out so phi_map is populated at every output epoch.
+				int d = step_inp < _step_out ? step_inp : _step_out;
+				while (d > 1 && _step_out % d != 0) --d;
+				writeLogInfo(_glog, 1, function_name, "Warning : step_in does not divide step_out; adjusting step_in to " + to_string(d));
+				step_inp = d;
+			}
+
 			bool forward = (beg >= end ? true : false);
 			int  sign = (forward ? 1 : -1);
-			double rkf_h = _step_inp * sign / 30.0;
+			double rkf_h = step_inp * sign / 30.0;
 
 			if (rkf_h == 0.0)
 			{
@@ -830,7 +845,7 @@ namespace great
 
 			// start adams
 			int adams_sign = (forward ? -1 : 1);
-			double adams_step = _step_inp * 1.0 * adams_sign;
+			double adams_step = step_inp * 1.0 * adams_sign;
 			t_gtime adams_ref_time = beg;
 			adams = new t_adams(_integra_degree, adams_step);
 
@@ -838,7 +853,7 @@ namespace great
 			int epoch_num = 0;
 			bool isValid = true;
 			t_gtime epoch_try = beg;
-			int n_inter_point = _step_out / _step_inp;
+			int n_inter_point = _step_out / step_inp;
 
 			while (epoch_try.dmjd()* adams_sign < end.dmjd() * adams_sign)
 			{

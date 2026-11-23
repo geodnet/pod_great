@@ -3852,12 +3852,15 @@ namespace great
 
 		for (i = 0; i < 2; i++)
 		{
+			// the table holds full UT1 unless it is UT1R: remove the diurnal/sub-diurnal (xyu) and the zonal tides at the
+			// nodes, they are added back at the epoch below. (Upstream subtracted dut1_zonaltide, always 0, so the zonal
+			// tide was counted twice with a non-UT1R table.)
+			xyu = t_gtriple(0.0, 0.0, 0.0);
+			dut1_zonaltide = 0.0;
 			if ((*erp).getUt1Mode() != "UT1R")
 			{
-				
 				_tide_corrections(rec[i].time, xyu);
-				dutlzonaltide = _tideCor2(rec[i].time.mjd());
-				
+				dut1_zonaltide = _tideCor2(rec[i].time.mjd());
 			}
 			rec[i].xpole = rec[i].xpole - xyu[0];
 			rec[i].ypole = rec[i].ypole - xyu[1];
@@ -3927,12 +3930,15 @@ namespace great
 
 		for (i = 0; i < 2; i++)
 		{
+			// the table holds full UT1 unless it is UT1R: remove the diurnal/sub-diurnal (xyu) and the zonal tides at the
+			// nodes, they are added back at the epoch below. (Upstream subtracted dut1_zonaltide, always 0, so the zonal
+			// tide was counted twice with a non-UT1R table.)
+			xyu = t_gtriple(0.0, 0.0, 0.0);
+			dut1_zonaltide = 0.0;
 			if ((*erp).getUt1Mode() != "UT1R")
 			{
-				
 				_tide_corrections(rec[i].time, xyu);
-				dutlzonaltide = _tideCor2(rec[i].time.mjd());
-				
+				dut1_zonaltide = _tideCor2(rec[i].time.mjd());
 			}
 			rec[i].xpole = rec[i].xpole - xyu[0];
 			rec[i].ypole = rec[i].ypole - xyu[1];

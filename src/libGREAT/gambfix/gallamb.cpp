@@ -28,7 +28,9 @@
 #include "gio/gfile.h"
 #include "gcoders/rinexo.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 #include "Eigen/Dense"
 #include "Eigen/SVD"

@@ -20,7 +20,9 @@
 #include "gset/gsetproc.h"
 #include "gutils/gstring.h"
 
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 using namespace std;
 using namespace pugi;

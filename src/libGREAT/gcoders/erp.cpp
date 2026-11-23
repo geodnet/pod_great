@@ -20,6 +20,7 @@
 
 #include <string>
 #include <algorithm>
+#include <cmath>
 
 #include"gcoders/erp.h"
 #include "gdata/gerp.h"
@@ -81,7 +82,6 @@ namespace great {
 						{
 							if (it->second->id_type() == t_gdata::ALLERP)
                             {
-								istr >> time >> time >> _begtime >> _endtime >> _interval;
                                 ((t_gerp*)it->second)->setBegEndTime(_begtime, _endtime);
                             }
 							it++;
@@ -172,11 +172,12 @@ namespace great {
 						par.push_back(pa);
 					}
 					int mjd = floor(t);
-					int sec = (t - mjd) * 3600;
+					int sec = static_cast<int>(std::lround((t - mjd) * 86400.0));   // upstream: * 3600
 					t_gtime T;
 					T.from_mjd(mjd, sec, 0.0);
 					map<string, double> data;
-					for (int i = 0; i < _parname.size(); i++)
+					size_t npar = min(_parname.size(), min(par.size(), _parunit.size()));
+					for (size_t i = 0; i < npar; i++)
 					{
 						data[_parname[i]] = par[i] * _parunit[i];
 					}

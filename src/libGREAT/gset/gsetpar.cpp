@@ -188,11 +188,24 @@ double great::t_gsetpar::sigDut1()
 	}
 }
 
+namespace {
+	// Resolve per-object attribute first, then wildcard default ("XXXX" for STA, "XXX" for SAT).
+	string find_par_attr(const xml_document& doc, const char* node_name, const string& id, const char* fallback_id, const char* attr)
+	{
+		xml_node pars = doc.child(XMLKEY_ROOT).child(XMLKEY_PARS);
+		string val = pars.find_child_by_attribute(node_name, "ID", id.c_str()).attribute(attr).value();
+		if (val.empty() && fallback_id)
+		{
+			val = pars.find_child_by_attribute(node_name, "ID", fallback_id).attribute(attr).value();
+		}
+		return val;
+	}
+}
+
 double great::t_gsetpar::sigZtd(string sta_name)
 {
 	//get rkf model node
-	xml_node station = _doc.child(XMLKEY_ROOT).child(XMLKEY_PARS).find_child_by_attribute("ID", sta_name.c_str());
-	string   sigZTD = station.attribute("sigZTD").value();
+	string sigZTD = find_par_attr(_doc, XMLKEY_PARS_STA, sta_name, "XXXX", "sigZTD");
 
 
 
@@ -211,8 +224,7 @@ double great::t_gsetpar::sigZtd(string sta_name)
 double great::t_gsetpar::sigTropPd(string sta_name)
 {
 	//get rkf model node
-	xml_node station = _doc.child(XMLKEY_ROOT).child(XMLKEY_PARS).find_child_by_attribute("ID", sta_name.c_str());
-	string   sigTropPd = station.attribute("sigTropPd").value();
+	string sigTropPd = find_par_attr(_doc, XMLKEY_PARS_STA, sta_name, "XXXX", "sigTropPd");
 
 
 
@@ -231,8 +243,7 @@ double great::t_gsetpar::sigTropPd(string sta_name)
 double great::t_gsetpar::sigRecCLK(string sta_name)
 {
 	//get rkf model node
-	xml_node station = _doc.child(XMLKEY_ROOT).child(XMLKEY_PARS).find_child_by_attribute("ID", sta_name.c_str());
-	string sigCLK = station.attribute("sigCLK").value();
+	string sigCLK = find_par_attr(_doc, XMLKEY_PARS_STA, sta_name, "XXXX", "sigCLK");
 
 
 	if (sigCLK.empty())
@@ -250,18 +261,12 @@ double great::t_gsetpar::sigRecCLK(string sta_name)
 double great::t_gsetpar::sigSatCLK(string sat_name)
 {
 	//get rkf model node
-	xml_node satellite = _doc.child(XMLKEY_ROOT).child(XMLKEY_PARS).find_child_by_attribute("ID", sat_name.c_str());
-	string   sigCLK = satellite.attribute("sigCLK").value();
+	string sigCLK = find_par_attr(_doc, XMLKEY_PARS_SAT, sat_name, "XXX", "sigCLK");
 
 
 
 	if (sigCLK.empty())
 	{
-		xml_node common_node = _doc.child(XMLKEY_ROOT).child(XMLKEY_PARS).find_child_by_attribute("ID", "XXX");
-		string   common_sigCLK = common_node.attribute("sigCLK").value();
-
-		if(!common_sigCLK.empty()) return str2dbl(common_sigCLK);
-
 		if (_log) _log->comment(1, "WARNNING : no setting for sigCLK, use the defalut number : " + dbl2str(_default_sat_sigCLK));
 		return _default_sat_sigCLK;
 	}
@@ -274,8 +279,7 @@ double great::t_gsetpar::sigSatCLK(string sat_name)
 map<string, double> great::t_gsetpar::sigSatPos(string sat_name)
 {
 	//get rkf model node
-	xml_node satellite = _doc.child(XMLKEY_ROOT).child(XMLKEY_PARS).find_child_by_attribute(XMLKEY_PARS_SAT, "ID", sat_name.c_str());
-	string   sigPOS = satellite.attribute("sigPOS").value();
+	string sigPOS = find_par_attr(_doc, XMLKEY_PARS_SAT, sat_name, "XXX", "sigPOS");
 
 
 
@@ -306,8 +310,7 @@ map<string, double> great::t_gsetpar::sigSatPos(string sat_name)
 map<string, double> great::t_gsetpar::sigSatVel(string sat_name)
 {
 	//get rkf model node
-	xml_node satellite = _doc.child(XMLKEY_ROOT).child(XMLKEY_PARS).find_child_by_attribute(XMLKEY_PARS_SAT, "ID", sat_name.c_str());
-	string   sigVEL = satellite.attribute("sigVEL").value();
+	string sigVEL = find_par_attr(_doc, XMLKEY_PARS_SAT, sat_name, "XXX", "sigVEL");
 
 
 
@@ -340,9 +343,7 @@ map<string, double> great::t_gsetpar::sigSatEcom(string sat_name)
 {
 	// todo : some problem
 	//get rkf model node
-	xml_node satellite = _doc.child(XMLKEY_ROOT).child(XMLKEY_PARS).find_child_by_attribute(XMLKEY_PARS_SAT, "ID", sat_name.c_str());
-	
-	string   sigECOM = satellite.attribute("sigECOM").value();
+	string sigECOM = find_par_attr(_doc, XMLKEY_PARS_SAT, sat_name, "XXX", "sigECOM");
 
 	map<string, double> sigPARS;
 	if (!sigECOM.empty())
@@ -385,8 +386,7 @@ map<string, double> great::t_gsetpar::sigSatEcom(string sat_name)
 gnut::t_gtriple great::t_gsetpar::sigRecPosTriple(string sta_name)
 {
 	//get rkf model node
-	xml_node satellite = _doc.child(XMLKEY_ROOT).child(XMLKEY_PARS).find_child_by_attribute(XMLKEY_PARS_STA, "ID", sta_name.c_str());
-	string   sigPOS = satellite.attribute("sigPOS").value();
+	string sigPOS = find_par_attr(_doc, XMLKEY_PARS_STA, sta_name, "XXXX", "sigPOS");
 
 
 

@@ -207,6 +207,7 @@ namespace great
 					_print_clk_solved(_lsq->_x_solve,dx,_crt_time);
 					
 				}
+				_write_flt_epoch(_crt_time);   // float or (after _ambfixDd_SRIF) fixed states of this epoch
 			
 
 			if ((rom == OFSTREAM_MODE::REAL_TIME))
@@ -249,30 +250,8 @@ namespace great
 		outorbfile.run_write();
 
 		// output_sp3
-		t_gfile outsp3file;
-		t_gallprec sp3_data;
-		vector<string> sats_temp;
-		for (auto& sat_item: _estimated_state_map_trs_sp3){
-			auto sat = sat_item.first;
-			sats_temp.push_back(sat);
-			for (auto& time_item: sat_item.second){
-				sp3_data.addpos(sat,time_item.first,time_item.second,0.0,t_gtriple(0,0,0),0.9);
-				sp3_data.add_interval(sat,_obs_intv);
-				sp3_data.add_agency("GREAT");
-			}
-		}
-		sp3_data.set_beg(_beg_time);
-		sp3_data.set_end(_end_time);
-		sp3_data.set_sat(sats_temp);
-		sp3_data.set_sat3(sats_temp);
-		sp3_data.set_data_type("P");
-		sp3_data.set_agency("GREAT");
-		sp3_data.set_sat_type("GNS");
-		outsp3file.path(dynamic_cast<t_gsetout*>(_gset)->outputs("sp3"));
-		t_sp3 coder_sp3(_gset);
-		coder_sp3.add_data("ID1", &sp3_data);
-		outsp3file.coder(&coder_sp3);
-		outsp3file.run_write();
+		if (!_write_sp3_direct(dynamic_cast<t_gsetout*>(_gset)->outputs("sp3")))
+			write_log_info(_glog, 0, "ERROR", "SP3 output failed");
 
 
 
@@ -531,8 +510,11 @@ namespace great
 		}
 		
 
-		// init rt_clk output file
-		string satclk_file = "clk_" + _beg_time.str_yyyydoy() + "_epo";
+		// init rt_clk output file (prefer XML <outputs><satclk>, fall back to CWD filename)
+		string satclk_file = dynamic_cast<t_gsetout*>(_gset)->outputs("satclk");
+		if (satclk_file.empty()) {
+			satclk_file = "clk_" + _beg_time.str_yyyydoy() + "_epo";
+		}
 		_satclkfile = new t_giof;
 		_satclkfile->tsys(t_gtime::GPS);
 		_satclkfile->mask(satclk_file);
@@ -740,6 +722,115 @@ namespace great
 		}
 	}
 
+	double t_gpodfltIF::_sp3_clk_us(const string& sat, const t_gtime& epo) const
+	{
+		auto it_sat = _estimated_clk_map.find(sat);
+		if (it_sat == _estimated_clk_map.end()) return 999999.999999;
+		auto it_epo = it_sat->second.find(epo);
+		if (it_epo == it_sat->second.end()) return 999999.999999;
+		double clk_us = it_epo->second * 1e6;
+		return (fabs(clk_us) < 999999.0) ? clk_us : 999999.999999;
+	}
+
+	// <outputs><flt>: the filtered satellite positions of this epoch (ITRF, km) as SP3 body records, written and flushed
+	// while the filter runs (upstream opened this file but never wrote it). The open mode follows <outputs append=...>.
+	void t_gpodfltIF::_write_flt_epoch(const t_gtime& epo)
+	{
+		if (!_result) return;
+		ostringstream os;
+		for (const auto& sat_item : _estimated_state_map_trs_sp3) {
+			auto it = sat_item.second.find(epo);
+			if (it == sat_item.second.end()) continue;
+			if (os.tellp() == 0) os << _sp3_epoch_line(epo);
+			os << "P" << sat_item.first << fixed << setprecision(6)
+			   << setw(14) << it->second[0] << setw(14) << it->second[1] << setw(14) << it->second[2]
+			   << setw(14) << _sp3_clk_us(sat_item.first, epo) << endl;
+		}
+		if (os.tellp() == 0) return;
+		string str = os.str();
+		_result->write(str.c_str(), str.size());
+		_result->flush();
+	}
+
+	string t_gpodfltIF::_sp3_epoch_line(const t_gtime& epo)
+	{
+		int y, mo, d, h, mi, sec;
+		epo.ymd(y, mo, d); epo.hms(h, mi, sec);
+		ostringstream os;
+		os << "*  " << setw(4) << y << setw(3) << mo << setw(3) << d << setw(3) << h << setw(3) << mi
+		   << setw(12) << fixed << setprecision(8) << (sec + epo.dsec()) << endl;
+		return os.str();
+	}
+
+	// SP3-c file straight from the stored filter states (upstream re-interpolated every epoch through t_gallprec, which
+	// hung/crashed when an epoch preceded a satellite's first state, and dropped the epoch line when G01 was missing)
+	bool t_gpodfltIF::_write_sp3_direct(const string& path)
+	{
+		if (path.empty()) return false;
+		string fpath = path;
+		if (fpath.compare(0, 7, "file://") == 0) fpath = fpath.substr(7);   // outputs() returns URLs
+		set<t_gtime> epochs;
+		vector<string> sats;
+		for (const auto& sat_item : _estimated_state_map_trs_sp3) {
+			if (sat_item.second.empty()) continue;
+			sats.push_back(sat_item.first);
+			for (const auto& t : sat_item.second) epochs.insert(t.first);
+		}
+		if (epochs.empty()) return false;
+		ofstream o(fpath.c_str());
+		if (!o) return false;
+		const t_gtime& t0 = *epochs.begin();
+		int y, mo, d, h, mi, sec;
+		t0.ymd(y, mo, d); t0.hms(h, mi, sec);
+		double intv = _obs_intv;
+		if (epochs.size() > 1) {
+			double min_dt = 1e12;
+			for (auto it = epochs.begin(), nxt = next(epochs.begin()); nxt != epochs.end(); ++it, ++nxt) {
+				double dt = *nxt - *it;
+				if (dt > 0.0 && dt < min_dt) min_dt = dt;
+			}
+			if (min_dt < 1e11) intv = min_dt;
+		}
+		char ver = (sats.size() > 85) ? 'd' : 'c';
+		char buf[128];
+		snprintf(buf, sizeof(buf), "#%cP%4d %2d %2d %2d %2d %11.8f %7d ORBIT IGS20 FIT GRT ", ver, y, mo, d, h, mi, sec + t0.dsec(), (int)epochs.size());
+		o << buf << endl;
+		snprintf(buf, sizeof(buf), "## %4d %15.8f %14.8f %5d %15.13f", t0.gwk(), t0.sow() + t0.dsec(), intv, t0.mjd(), t0.sod() / 86400.0);
+		o << buf << endl;
+		const size_t nl = max<size_t>(5, (sats.size() + 16) / 17);
+		for (size_t l = 0; l < nl; l++) {
+			o << (l == 0 ? "+  " : "+    ");
+			if (l == 0) { snprintf(buf, sizeof(buf), "%3d   ", (int)sats.size()); o << buf; }
+			else o << "    ";
+			for (size_t k = l * 17; k < l * 17 + 17; k++) o << (k < sats.size() ? sats[k] : string("  0"));
+			o << endl;
+		}
+		for (size_t l = 0; l < nl; l++) {
+			o << "++       ";
+			for (size_t k = l * 17; k < l * 17 + 17; k++) o << (k < sats.size() ? "  0" : "  0");
+			o << endl;
+		}
+		o << "%c M  cc GPS ccc cccc cccc cccc cccc ccccc ccccc ccccc ccccc" << endl
+		  << "%c cc cc ccc ccc cccc cccc cccc cccc ccccc ccccc ccccc ccccc" << endl
+		  << "%f  1.2500000  1.025000000  0.00000000000  0.000000000000000" << endl
+		  << "%f  0.0000000  0.000000000  0.00000000000  0.000000000000000" << endl
+		  << "%i    0    0    0    0      0      0      0      0         0" << endl
+		  << "%i    0    0    0    0      0      0      0      0         0" << endl
+		  << "/* GREAT-PODFLT filtered orbits (great_podflt, direct SP3 writer)" << endl;
+		for (const auto& epo : epochs) {
+			o << _sp3_epoch_line(epo);
+			for (const auto& sat : sats) {
+				const auto& m = _estimated_state_map_trs_sp3[sat];
+				auto it = m.find(epo);
+				if (it == m.end()) continue;
+				snprintf(buf, sizeof(buf), "P%s%14.6f%14.6f%14.6f%14.6f", sat.c_str(), it->second[0], it->second[1], it->second[2], _sp3_clk_us(sat, epo));
+				o << buf << endl;
+			}
+		}
+		o << "EOF" << endl;
+		return true;
+	}
+
 
 	void t_gpodfltIF::_preprocess_obs()
 	{
@@ -793,6 +884,8 @@ namespace great
 			_ambfix_flt->add_glo_fid(_glofrq_num);
 			_ambfix_flt->update_data(&ambPars, _gall_obs, _gall_bias, _gall_obj, _crt_time - _obs_intv + wl_interval, _crt_time);
 			end_t = chrono::high_resolution_clock::now();
+			ColumnVector dx_float = eigen2newmat(_flt._x);
+			_print_clk_solved(_lsq->_x_solve, dx_float, _crt_time);
 			return;
 		}
 
@@ -874,7 +967,6 @@ namespace great
 
 		ostringstream os;
 		t_gtime creat_t(t_gtime::UTC);
-		creat_t.add_secs(28800);
 
 		string sat_ref = dynamic_cast<t_gsetproc*>(_gset)->ref_clk();
 		// write sp3 clk file header
@@ -892,7 +984,7 @@ namespace great
 			os << "    " << right << setw(2) << "1" << setw(54) << "" << "# OF CLK REF" << endl;
 
 			// write ANALYSIS CLK REF
-			os << setw(4) << sat_ref << setw(56) << " " << "ANALYSIS CLK REF" << endl;
+			os << left << setw(4) << sat_ref.substr(0, 4) << setw(56) << " " << "ANALYSIS CLK REF" << endl;
 
 			// write END OF HEADER
 			os << setw(60) << " " << "END OF HEADER" << endl;
@@ -906,10 +998,9 @@ namespace great
 
 		// write sp3 clk file data
 		double satclk;
-		for (it_sat; it_sat != sat_end; it_sat++) {
+		for (; it_sat != sat_end; ++it_sat) {
 			int idx = par.getParam("", t_gpar::CLK_SAT, *it_sat, crt_epoch, crt_epoch);
 			if (idx < 0) continue;
-			int idx_ifcb;
 
 			double x = par[idx].value();
 			double dclk = dx(idx + 1);
@@ -919,6 +1010,7 @@ namespace great
 				//continue;
 				clk = x + dclk;
 				satclk = clk / CLIGHT;
+				_estimated_clk_map[*it_sat][crt_epoch] = satclk;
 
 				os << "AS" << " " << setw(3) << *it_sat << "  " <<
 					setw(26) << crt_epoch.str("%Y %C %L %K %O %P") << " " << setw(2)

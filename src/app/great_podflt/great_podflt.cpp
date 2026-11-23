@@ -65,10 +65,18 @@ int main(int argc, char** argv)
 	// set ambfix by process node
 	gset.isAmbfix = gset.isAmbfix || dynamic_cast<t_gsetproc*>(&gset)->ambfix();
 
+	// Enable broadcast-nav initialization automatically when only broadcast nav is configured
+	if (!gset.isUseBrdm &&
+		gset.input_size("sp3") == 0 && gset.input_size("orb") == 0 &&
+		gset.input_size("rinexc") == 0 && gset.input_size("rnc") == 0 &&
+		(gset.input_size("rinexn") > 0 || gset.input_size("rnn") > 0)) {
+		gset.isUseBrdm = true;
+	}
+
 	// ================================================================================================================================================================================================================
 	t_gcdr_podflt gcdr; gcdr.log(&glog);   gcdr.set(&gset);                                       // coder class for reading file,and  add log file
 	multimap<IFMT, string> inp = gset.inputs_all();                                               // Prepare input files list form gset
-	if (!gset.check_inp()) return false;                                                          // then check the input file
+	if (!gset.check_inp()) return 1;                                                          // then check the input file
 
 	// DECLARATIONS/INITIALIZATIONS	
 	map<t_gdata::ID_TYPE, t_gdata*> map_gdata;
@@ -108,7 +116,7 @@ int main(int argc, char** argv)
 		}
 		obs_true++; gcdr.coder(it_inp.first, it_inp.second, map_gdata[type], gobj);
 	}
-	glog.comment(t_glog::LOG_LV::LOG_INFO, "great_podflt", "main", "obs find is : " + int2str(obs_true) + " " + dbl2str((obs_true/(obs_false+obs_true)*100)) + " %");
+	glog.comment(t_glog::LOG_LV::LOG_INFO, "great_podflt", "main", "obs find is : " + int2str(obs_true) + " " + dbl2str(obs_false + obs_true > 0 ? 100.0 * obs_true / (obs_false + obs_true) : 0.0) + " %");
 	if (rom != OFSTREAM_MODE::REAL_TIME) {
 		gobj->read_satinfo(beg);                                                                       	// set antennas for satllites (must be before PCV assigning)
 		gobj->sync_pcvs();                                                                              // assigning PCV pointers to objects; PCV comes from atx file

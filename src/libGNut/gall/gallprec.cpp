@@ -492,11 +492,10 @@ int t_gallprec::_get_crddata( string sat, const t_gtime& t )
   if( itReq == _mapsp3[sat].end() ) return -1;
 
   // add for nearest epoch add by glfeng
-  map<t_gtime, t_map_dat>::iterator itReq_tmp = --(_mapsp3[sat].lower_bound(t));
-
-
-  if (itReq_tmp != std::end(_mapsp3[sat]))
+  // (upstream decremented begin() when t precedes the first record: undefined behaviour, hang/crash in the SP3 writer)
+  if (itReq != _mapsp3[sat].begin())
   {
+	  map<t_gtime, t_map_dat>::iterator itReq_tmp = std::prev(itReq);
 	  if (abs(t.diff(itReq_tmp->first)) < abs(t.diff(itReq->first)))  itReq = itReq_tmp;
   }
    
@@ -643,39 +642,37 @@ int t_gallprec::_get_clkdata( string sat, const t_gtime& t )
   bool flag_left = false;
   auto itleft = itReq;
   for (int i = 0; i <= limit; i++) {
-	  itleft--;
-	  if (itleft == _mapclk[sat].end()) {
+	  if (itleft == itBeg) {
 		  flag_left = true;
 		  break;
 	  }
+	  --itleft;
   }
   bool flag_right = false;
   auto itright = itReq;
   for (int i = 0; i < static_cast<int>(degree_clk - limit); i++) {
-	  itright++;
-	  if (itright == _mapclk[sat].end()) {
+	  ++itright;
+	  if (itright == itEnd) {
 		  flag_right = true;
 		  break;
 	  }
   }
 
-  if (_mapclk[sat].size() < static_cast<int>(degree_clk)) {
-    if( _log && _log->verb() >= 1 ) _log->comment(1,"gallprec",t.str_ymdhms(sat + " warning - not enough clk data found for "));
-    return -1;
-
-
+  if (_mapclk[sat].size() <= static_cast<size_t>(degree_clk)) {
+    // Allow single-record polynomial clocks when C1/C2 derivatives are valid; otherwise need degree_clk + 1 points
+    if (it->second["C1"] >= UNDEFVAL_CLK) {
+      if( _log && _log->verb() >= 1 ) _log->comment(1,"gallprec",t.str_ymdhms(sat + " warning - not enough clk data found for "));
+      return -1;
+    }
+    it = itReq;
   }else if (flag_left) {
     it = itBeg;
-     
-
   }else if (flag_right) {
-    it = itEnd;
-    for(int i=0; i <= static_cast<int>(degree_clk); i++) it--;
-
+    it = std::prev(itEnd, degree_clk + 1);
   // around requested item (standard case)
-  }else{ 
-     for(int i = 0; i <= limit; i++ ) it--;
-  } 
+  }else{
+     for(int i = 0; i <= limit; i++ ) --it;
+  }
 
   // calculate
   if( it->second["C1"] < UNDEFVAL_CLK ){
@@ -690,11 +687,12 @@ int t_gallprec::_get_clkdata( string sat, const t_gtime& t )
         }
         else
         {
-            it++;
-            double tdiff = it->first - t; 
+            auto it_next = std::next(it);
+            if (it_next == itEnd) return -1;
+            double tdiff = it_next->first - t;
             _CT.push_back(tdiff);
-            _C.push_back(it->second["C0"]);
-            _IFCB_F3.push_back(it->second["IFCB_F3"]);
+            _C.push_back(it_next->second["C0"]);
+            _IFCB_F3.push_back(it_next->second["IFCB_F3"]);
         }
       return 1;
     }else{

@@ -150,10 +150,14 @@ namespace gnut
 		for (auto item : _mapbias)
 		{
 			string ac = (item.first == "WHU_PHASE") ? "WHU" : item.first;
-			if (ac_order.at(ac) < loc)
+			// upstream used ac_order.at(): any other analysis centre (e.g. an own SINEX-BIAS file) threw
+			// std::out_of_range and aborted the run. Unknown centres rank after the listed ones.
+			auto it_ord = ac_order.find(ac);
+			int order = (it_ord == ac_order.end()) ? 100 : it_ord->second;
+			if (order < loc)
 			{
 				used_ac = ac;
-				loc = ac_order.at(item.first);
+				loc = order;
 			}
 		}
 		return used_ac;
@@ -193,10 +197,12 @@ namespace gnut
 			int loc = 999;
 			for (const auto& item : _mapbias) 
 			{
-				if (_ac_order.at(item.first) < loc) 
+				auto it_ord = _ac_order.find(item.first);   // unknown centres rank last (upstream: .at() threw)
+				int order = (it_ord == _ac_order.end()) ? 100 : it_ord->second;
+				if (order < loc) 
 				{
 					ac = item.first;
-					loc = _ac_order.at(item.first);
+					loc = order;
 				}
 			}
 

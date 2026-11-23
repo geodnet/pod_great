@@ -367,7 +367,7 @@ int t_gpppmodel::attitude(t_gsatdata& satdata, string antype, ColumnVector& i, C
       _attitude_GPSIIR(satdata, antype, i, j, k);
     }else if(antype == "BLOCK IIF"){
       _attitude_GPSIIF(satdata, antype, i, j, k);
-    }else if (antype == "BLOCK III"){  // added by yqyuan for GPSIII (BLOCK III/IIIA/IIIF???)
+    }else if (antype.compare(0, 9, "BLOCK III") == 0){  // GPS III / IIIA / IIIF
 	  _attitude_GPSIII(satdata, antype, i, j, k);
 	}
     else _ysm(satdata, i, j, k);  
@@ -416,7 +416,7 @@ int t_gpppmodel::attitude(string antype, string prn, ColumnVector& xsat, ColumnV
 			//_attitude_GPSIIF(satdata, antype, i, j, k);
 			_attitude_GPSIIF(antype, prn, xsat, vsat, xsun, i, j, k);
 		}
-		else if (antype == "BLOCK III") {  
+		else if (antype.compare(0, 9, "BLOCK III") == 0) {
 			_attitude_GPSIII(antype, prn, xsat, vsat, xsun, i, j, k);
 		}
 		else _ysm(prn, beta, orb_angle, xsat, vsat, xsun, i, j, k); 
@@ -1031,6 +1031,9 @@ void t_gpppmodel::_attitude_GPSIII(t_gsatdata& satdata, string antype, ColumnVec
 
 void t_gpppmodel::_attitude_GPSIII(string antype, string prn, ColumnVector & xsat, ColumnVector & vsat, ColumnVector & xsun, ColumnVector & i, ColumnVector & j, ColumnVector & k)
 {
+	double beta = _beta(xsat, vsat, xsun);
+	double orb_angle = _orb_angle(xsat, vsat, xsun);
+	_ysm(prn, beta, orb_angle, xsat, vsat, xsun, i, j, k);
 }
 
 

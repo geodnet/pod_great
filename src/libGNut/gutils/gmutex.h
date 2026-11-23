@@ -19,7 +19,9 @@
 #endif
 
 #include "ExportHeaders/ExportBase.h"
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include <thread>
 #include <mutex>
 

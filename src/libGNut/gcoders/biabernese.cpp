@@ -209,7 +209,7 @@ int t_biabernese::_decode_data_sinex(char* buff, int sz, int& cnt, vector<string
 		else if (line.substr(1, 4) == "DSB " || line.substr(1, 4) == "ISB " || line.substr(1, 4) == "OSB ") {
 			string svn, prn, station, obs1, obs2, units;
 			double value, precision, factor;
-			if (line.size() >= 104) {
+			if (line.size() >= 93) {
 				svn = line.substr(6, 4);
 				prn = line.substr(11, 3);
 				station = trim(line.substr(15, 9));
@@ -238,7 +238,7 @@ int t_biabernese::_decode_data_sinex(char* buff, int sz, int& cnt, vector<string
 					continue;
 				}
 				value = str2dbl(line.substr(70, 21));
-				precision = str2dbl(line.substr(92, 11));
+				precision = (line.size() > 93) ? str2dbl(line.substr(92, min<size_t>(11, line.size() - 92))) : 0.0;
 				complete = true;
 			}
 			else {

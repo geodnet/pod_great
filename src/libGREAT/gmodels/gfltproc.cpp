@@ -353,9 +353,30 @@ namespace great
 	// set sys bia pars
 	bool t_gfltproc::_init_sys_bia_pars(t_glsq* lsq)
 	{
-		
-		if (_sys_list.size() < 2  && _frequency == 2) return true;
-		
+		if (!lsq || !_gset || _rec_list.empty()) return false;
+		if (_sys_list.size() < 2) return true;
+
+		// Keep one constellation (GPS when active) as the receiver-clock reference so ISBs stay full-rank
+		string ref_sys = _sys_list.count("GPS") ? "GPS" : *_sys_list.begin();
+		int ipar_num = lsq->_x_solve.parNumber();
+
+		static const map<string, t_gpar::t_type> isb_map = {
+			{"GLO", t_gpar::GLO_ISB},
+			{"GAL", t_gpar::GAL_ISB},
+			{"BDS", t_gpar::BDS_ISB},
+			{"QZS", t_gpar::QZS_ISB},
+		};
+
+		for (const auto& rec : _rec_list) {
+			for (const auto& sys : _sys_list) {
+				if (sys == ref_sys) continue;
+				auto it = isb_map.find(sys);
+				if (it == isb_map.end()) continue;
+				t_gpar par(rec, it->second, ++ipar_num, "");
+				_set_isb_par_setting(lsq, par, 0.0, 9000.0);
+			}
+		}
+		return true;
 	}
 
 
@@ -932,6 +953,7 @@ namespace great
 
 		auto it_beg = rec_ground.begin();
 		auto it_end = rec_ground.end();
+		int missing = 0;
 		for (auto it = it_beg; it != it_end; )
 		{
 			string site = *it;
@@ -960,19 +982,21 @@ namespace great
 	
 			// only need sinex file 
 			t_gtriple snx_crd, snx_std;
-			if (!_grec->get_recent_crd(_beg_time,0.1,snx_crd,snx_std)) 
-			{					
-				// add for station no snx crd
-
+			if (!_grec->get_recent_crd(_beg_time,0.1,snx_crd,snx_std))
+			{
+				// no SINEX coordinate (sigma < 0.1 m): previously the iterator was never advanced (endless loop).
+				// Fail with the station names instead; the station list and the SINEX input must match.
+				write_log_info(_glog, 0, "ERROR : no SINEX coordinate (sigma < 0.1 m) for station " + site);
+				cerr << "ERROR: no SINEX coordinate (sigma < 0.1 m) for station " << site << endl;
+				missing++;
 			}
-			else 
+			else
 			{
 				_grec->crd(snx_crd, snx_std,FIRST_TIME,LAST_TIME,true);
-				it++;
 			}
-			continue;
+			it++;
 		}
-		return true;
+		return missing == 0;
 	}
 
 

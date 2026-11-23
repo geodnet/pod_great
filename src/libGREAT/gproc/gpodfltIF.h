@@ -73,6 +73,10 @@ namespace great
 		void _preprocess_obs();
 		void _ambfixDd_SRIF();
 		void _print_clk_solved(t_gallpar& par, ColumnVector& dx, t_gtime& crt_epoch);
+		void _write_flt_epoch(const t_gtime& epo);                 ///< <flt>: per-epoch orbit records while running
+		string _sp3_epoch_line(const t_gtime& epo);
+		double _sp3_clk_us(const string& sat, const t_gtime& epo) const;
+		bool _write_sp3_direct(const string& path);                ///< SP3 from the stored filter states
         void _output_srif_variance();
         void _add_vel_pulse(Eigen::MatrixXd &A);
 
@@ -104,6 +108,7 @@ namespace great
 
 		t_giof*	           _result = nullptr;		///< outputs every epoch result file
 		t_giof*	           _corr_map = nullptr;
+		map<string, map<t_gtime, double>> _estimated_clk_map;	///< solved satellite clocks [s] per epoch
 
 
 		// 

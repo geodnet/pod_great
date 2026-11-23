@@ -20,7 +20,9 @@
 #include "Eigen/Sparse"
 #include <stdexcept>
 #include <algorithm>
+#if defined(__x86_64__) || defined(_M_X64)
 #include <emmintrin.h>
+#endif
 #include <assert.h>
 #include <chrono>
 
